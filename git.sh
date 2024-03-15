@@ -9,21 +9,37 @@ git fetch origin
 # Get the list of local branches
 BRANCHES=$(git branch --format='%(refname:short)')
 
-# Loop through each branch (excluding master)
+# Checkout the main branch
+git checkout main
+
+# Copy Jenkinsfile to a temporary location
+cp "$FILE_PATH" /tmp/Jenkinsfile_tmp
+
+# Loop through each branch (excluding main)
 for BRANCH in $BRANCHES; do
     if [ "$BRANCH" != "main" ]; then
         # Checkout to the branch
         git checkout $BRANCH
 
-        # Cherry-pick the changes from the main branch
-        git cherry-pick main -- $FILE_PATH
+        # Remove the existing Jenkinsfile if it exists
+        if [ -f "$FILE_PATH" ]; then
+            git rm "$FILE_PATH"
+        fi
 
-        # Resolve conflicts if any
+        # Copy Jenkinsfile from the temporary location
+        cp /tmp/Jenkinsfile_tmp "$FILE_PATH"
+
+        # Add the new Jenkinsfile
+        git add "$FILE_PATH"
+
         # Commit the changes
-        git commit -am "Reflect changes from main branch"
+        git commit -m "Reflect changes from main branch"
 
         # Push the changes to the remote repository
         git push origin $BRANCH
     fi
 done
+
+# Switch back to the main branch
+git checkout main
 
